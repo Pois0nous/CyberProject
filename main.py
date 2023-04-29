@@ -3,6 +3,9 @@ import base64
 import os
 from passlib.hash import bcrypt
 import getpass
+import re
+from termcolor import colored
+
 
 # Connect to the PostgreSQL database.
 conn = psycopg2.connect(user = "postgres",
@@ -19,8 +22,14 @@ key = os.urandom(16)
 def signup():
     # Get the username and password from the user.
     username = input('Enter your username: ')
+    
     password = getpass.getpass(prompt='Enter your password: ')
-    # password = input('Enter your password: ')
+
+    # Validate the password.
+    while not validate_password(password):
+        print(colored("\n!Invalid password.", 'red'))
+        print(colored("Please enter a password that is longer than 8 characters and has at least one small letter, one capital, one number, and one special character.\n", 'red'))
+        password = getpass.getpass(prompt='Enter your password: ')
 
     # Encrypt the password.
     encrypted_password = bcrypt.hash(password)
@@ -52,6 +61,29 @@ def signin():
         else:
             print('Invalid username or password.')
 
+
+def validate_password(password):
+    # Check if the password is longer than 8 characters.
+    if len(password) < 8:
+        return False
+
+    # Check if the password has at least one small letter.
+    if not re.search(r'[a-z]', password):
+        return False
+
+    # Check if the password has at least one capital letter.
+    if not re.search(r'[A-Z]', password):
+        return False
+
+    # Check if the password has at least one number.
+    if not re.search(r'\d', password):
+        return False
+
+    # Check if the password has at least one special character.
+    if not re.search(r'[!@#$%^&*()_+{}:"<>?]', password):
+        return False
+
+    return True
 
 # Display the menu.
 while True:
