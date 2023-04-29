@@ -2,13 +2,14 @@ import psycopg2
 import base64
 import os
 from passlib.hash import bcrypt
+import getpass
 
 # Connect to the PostgreSQL database.
 conn = psycopg2.connect(user = "postgres",
                         password = "2546",
                         host = "localhost",
                         port = 5432,
-                        database = "test2")
+                        database = "test3")
 cur = conn.cursor()
 
 # Generate a key.
@@ -18,7 +19,8 @@ key = os.urandom(16)
 def signup():
     # Get the username and password from the user.
     username = input('Enter your username: ')
-    password = input('Enter your password: ')
+    password = getpass.getpass(prompt='Enter your password: ')
+    # password = input('Enter your password: ')
 
     # Encrypt the password.
     encrypted_password = bcrypt.hash(password)
@@ -33,7 +35,7 @@ def signup():
 def signin():
     # Get the username and password from the user.
     username = input('Enter your username: ')
-    password = input('Enter your password: ')
+    password = getpass.getpass(prompt='Enter your password: ')
 
     # Get the encrypted password from the database.
     cur.execute('SELECT password FROM users WHERE username = %s', (username,))
