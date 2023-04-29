@@ -9,10 +9,10 @@ from termcolor import colored
 
 # Connect to the PostgreSQL database.
 conn = psycopg2.connect(user = "postgres",
-                        password = "2546",
+                        password = "hacker123",
                         host = "localhost",
                         port = 5432,
-                        database = "test3")
+                        database = "test4")
 cur = conn.cursor()
 
 # Generate a key.
@@ -22,6 +22,12 @@ key = os.urandom(16)
 def signup():
     # Get the username and password from the user.
     username = input('Enter your username: ')
+    
+    #Validate the username
+    while not validate_username_unique(username):
+        print(colored("\n!The username has been used.", 'red'))
+        print(colored(" Please type a different username", 'red'))
+        username = input('Enter your username: ')
     
     password = getpass.getpass(prompt='Enter your password: ')
 
@@ -38,7 +44,7 @@ def signup():
     cur.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, encrypted_password))
     conn.commit()
 
-    print('User created successfully!')
+    print('Registration Successful')
 
 # Define a function to sign in a user.
 def signin():
@@ -52,15 +58,23 @@ def signin():
 
     # Check if the row is None.
     if row is None:
-        print('Invalid username or password.')
+        print('Please enter correct username password')
     else:
         encrypted_password = row[0]
         # Check if the password is correct.
         if bcrypt.verify(password, encrypted_password):
-            print('Login successful!')
+            print('You are authenticated, Welcome %s', (username))
         else:
-            print('Invalid username or password.')
+            print('Please enter correct username password')
 
+
+def validate_username_unique(username):
+    cur.execute('SELECT username FROM users')
+    users = cur.fetchall()
+    for user in users:
+        if user[0] == username:
+            return False
+    return True
 
 def validate_password(password):
     # Check if the password is longer than 8 characters.
