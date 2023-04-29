@@ -1,40 +1,72 @@
+import psycopg2
+import base64
 import os
-import psycopg2 as pg
-from termcolor import colored
-import time
-import login
-import menu
-import getpass
+from passlib.hash import bcrypt
 
-clear = lambda: os.system('cls')
+# Connect to the PostgreSQL database.
+conn = psycopg2.connect(user = "postgres",
+                        password = "2546",
+                        host = "localhost",
+                        port = 5432,
+                        database = "test2")
+cur = conn.cursor()
 
-def main():# Main program.
-    clear()
-    print(colored(f'### Welcome to the Car Rental System ###', 'green'))
-    print("\nPlease connect to the database first:")
-    cursor = dbConnect()
-    title, userid = login.sign(cursor)
-    print(title, userid)
-    clear()
-    menu.greeting(cursor, title, userid)
+# Generate a key.
+key = os.urandom(16)
 
-def dbConnect(): # Database connection.
-        while True:
-            try:
-                dbName = input("-- Input the database name: ")
-                dbPassword = getpass.getpass("-- Input the database password: ")
+# Define a function to sign up a user.
+def signup():
+    # Get the username and password from the user.
+    username = input('Enter your username: ')
+    password = input('Enter your password: ')
 
-                connection = pg.connect(user = "postgres",
-                                            password = dbPassword,
-                                            host = "localhost",
-                                            port = 5432,
-                                            database = dbName)
-                cursor = connection.cursor()
-                print(colored('\nConnection successful!', 'green'))
-                time.sleep(1)
-                clear()
-                return cursor
-            except (Exception, pg.Error) as error:
-                print(colored('\n! Error while connecting to the database. Please try again.\n', 'red'))
+    # Encrypt the password.
+    encrypted_password = bcrypt.hash(password)
 
-main()
+    # Save the user to the database.
+    cur.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, encrypted_password))
+    conn.commit()
+
+    print('User created successfully!')
+
+# Define a function to sign in a user.
+def signin():
+    # Get the username and password from the user.
+    username = input('Enter your username: ')
+    password = input('Enter your password: ')
+
+    # Get the encrypted password from the database.
+    cur.execute('SELECT password FROM users WHERE username = %s', (username,))
+    row = cur.fetchone()
+
+    # Check if the row is None.
+    if row is None:
+        print('Invalid username or password.')
+    else:
+        encrypted_password = row[0]
+        # Check if the password is correct.
+        if bcrypt.verify(password, encrypted_password):
+            print('Login successful!')
+        else:
+            print('Invalid username or password.')
+
+
+# Display the menu.
+while True:
+    print('1. Sign up')
+    print('2. Sign in')
+    print('3. Exit')
+
+    # Get the user's choice.
+    choice = input('Enter your choice: ')
+
+    # Execute the corresponding function.
+    if choice == '1':
+        signup()
+    elif choice == '2':
+        signin()
+    elif choice == '3':
+        break
+
+# Close the connection to the PostgreSQL database.
+conn.close()
